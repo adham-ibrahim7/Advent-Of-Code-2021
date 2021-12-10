@@ -9,3 +9,4 @@ Solutions to the AOC 2021 problems
 6. be smart (first non-trivial!)
 7. sums of distances but brute force possible
 8. annoying 7 segment logic
+9. dfs!
