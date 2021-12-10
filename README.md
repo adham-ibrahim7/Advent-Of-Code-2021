@@ -10,3 +10,4 @@ Solutions to the AOC 2021 problems
 7. sums of distances but brute force possible
 8. annoying 7 segment logic
 9. dfs!
+10. paranthesis parsing with stack
