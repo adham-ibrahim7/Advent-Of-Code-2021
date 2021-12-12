@@ -12,3 +12,4 @@ Solutions to the AOC 2021 problems
 9. dfs!
 10. paranthesis parsing with stack
 11. loop logic
+12. interesting dfs modification
