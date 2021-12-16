@@ -15,3 +15,5 @@ Solutions to the AOC 2021 problems
 12. interesting dfs modification
 13. sets, 2d stuff, cool!
 14. *** implicitly describing a string
+15. dp/dijkstra graphs lmao
+16. recursion
