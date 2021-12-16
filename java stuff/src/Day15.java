@@ -4,7 +4,7 @@ import java.io.*;
 public class Day15 {
     public static void main(String[] args) throws IOException {
         setIn("day15.txt");
-        setOut();
+        setOut("day15_out.txt");
 
         N = 100;
         int[][] orig = new int[N][N];
@@ -16,14 +16,76 @@ public class Day15 {
         }
 
         List<Pair> pairs = new LinkedList<>();
-        Map<Pair, Edge> edges = new HashMap<>();
-        for (int k = 0; k < 5; k++) {
-            for (int u = 0; u < N; u++) {
+        Map<Pair, List<Edge>> edges = new HashMap<>();
 
+        int K = 5;
+        for (int f = 0; f < K; f++) {
+            for (int g = 0; g < K; g++) {
+                List<Pair> curr = new LinkedList<>();
+                for (int i = f * N; i < (f+1) * N; i++) {
+                    // left
+                    curr.add(PR(i, g * N));
+                    // right
+                    curr.add(PR(i, (g+1) * N - 1));
+                }
+
+                for (int j = g * N; j < (g+1) * N; j++) {
+                    // top
+                    curr.add(PR(f * N, j));
+                    // bottom
+                    curr.add(PR((f+1) * N - 1, j));
+                }
+
+                Map<Pair, Map<Pair, Integer>> dists = apsp(orig, f + g);
+                System.out.println("Computed f=" + f + ", g=" + g);
+
+                for (int i = 0; i < curr.size(); i++) {
+                    for (int j = 0; j < curr.size(); j++) {
+                        Pair a = curr.get(i);
+                        Pair b = curr.get(j);
+
+                        Pair c = PR(a.i % N, a.j % N);
+                        Pair d = PR(b.i % N, b.j % N);
+
+                        edges.putIfAbsent(a, new LinkedList<>());
+                        edges.get(a).add(new Edge(a, b, dists.get(c).get(d)));
+                    }
+                }
+
+                for (Pair p : curr) {
+                    edges.putIfAbsent(p, new LinkedList<>());
+
+                    int i = p.i % N;
+                    int j = p.j % N;
+
+                    if (i == 0 && f > 0) {
+                        int w = (orig[N-1][j] + (f-1) + g - 1) % 9 + 1;
+                        edges.get(p).add(new Edge(p, PR(p.i-1, p.j), w));
+                    }
+
+                    if (j == 0 && g > 0) {
+                        int w = (orig[i][N-1] + f + (g-1) - 1) % 9 + 1;
+                        edges.get(p).add(new Edge(p, PR(p.i, p.j-1), w));
+                    }
+
+                    if (i == N-1 && f < K-1) {
+                        int w = (orig[0][j] + (f+1) + g - 1) % 9 + 1;
+                        edges.get(p).add(new Edge(p, PR(p.i+1, p.j), w));
+                    }
+
+                    if (j == N-1 && g < K-1) {
+                        int w = (orig[i][0] + f + (g+1) - 1) % 9 + 1;
+                        edges.get(p).add(new Edge(p, PR(p.i, p.j+1), w));
+                    }
+                }
+
+                pairs.addAll(curr);
             }
         }
 
-        apsp(orig);
+        Map<Pair, Integer> dist = dijkstra(PR(0, 0), pairs, edges);
+        out.println("part 2: " + dist.get(PR(K*N-1, K*N-1)));
+        System.out.println("part 2: " + dist.get(PR(K*N-1, K*N-1)));
 
         closeIO();
     }
@@ -74,7 +136,7 @@ public class Day15 {
         return pairs;
     }
 
-    private static Map<Pair, List<Edge>> edges(int[][] weights) {
+    private static Map<Pair, List<Edge>> edges(int[][] weights, int offset) {
         Map<Pair, List<Edge>> adj = new HashMap<>();
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
@@ -82,19 +144,19 @@ public class Day15 {
 
                 adj.putIfAbsent(p, new LinkedList<>());
                 if (i > 0) {
-                    adj.get(p).add(new Edge(p, PR(i-1, j), weights[i-1][j]));
+                    adj.get(p).add(new Edge(p, PR(i-1, j), (weights[i-1][j] + offset - 1) % 9 + 1));
                 }
 
                 if (j > 0) {
-                    adj.get(p).add(new Edge(p, PR(i, j-1), weights[i][j-1]));
+                    adj.get(p).add(new Edge(p, PR(i, j-1), (weights[i][j-1] + offset - 1) % 9 + 1));
                 }
 
                 if (i < N-1) {
-                    adj.get(p).add(new Edge(p, PR(i+1, j), weights[i+1][j]));
+                    adj.get(p).add(new Edge(p, PR(i+1, j), (weights[i+1][j] + offset - 1) % 9 + 1));
                 }
 
                 if (j < N-1) {
-                    adj.get(p).add(new Edge(p, PR(i, j+1), weights[i][j+1]));
+                    adj.get(p).add(new Edge(p, PR(i, j+1), (weights[i][j+1] + offset - 1) % 9 + 1));
                 }
             }
         }
@@ -141,7 +203,9 @@ public class Day15 {
 //            out.println(p.i + " " + p.j);
 //        }
 
-        int dprime = dist.get(PR(i, j)) + e.weight;
+        int w = e.weight;
+
+        int dprime = dist.get(PR(i, j)) + w;
         if (dprime < dist.get(PR(k, h))) {
             pq.remove(e.v);
             dist.put(PR(k, h), dprime);
@@ -149,19 +213,23 @@ public class Day15 {
         }
     }
 
-    private static Map<Pair, Integer>[][] apsp(int[][] weights) {
+    private static Map<Pair, Map<Pair, Integer>> apsp(int[][] weights, int offset) {
         // 0 top 1 left 2 bottom 3 right
-        Map<Pair, Integer>[][] dist = new Map[4][N];
+        Map<Pair, Map<Pair, Integer>> dist = new HashMap<>();
 
         List<Pair> pairs = pairs(weights);
-        Map<Pair, List<Edge>> edges = edges(weights);
+        Map<Pair, List<Edge>> edges = edges(weights, offset);
 
         for (int u = 0; u < N; u++) {
-            dist[0][u] = dijkstra(PR(0, u), pairs, edges);
-            dist[1][u] = dijkstra(PR(u, 0), pairs, edges);
-            dist[2][u] = dijkstra(PR(N-1, u), pairs, edges);
-            dist[3][u] = dijkstra(PR(u, N-1), pairs, edges);
-            System.out.println(u);
+            for (Pair p : new Pair[] {PR(0, u), PR(u, 0), PR(N-1, u), PR(u, N-1)}) {
+                dist.put(p, dijkstra(p, pairs, edges));
+            }
+
+//            dist[0][u] = dijkstra(PR(0, u), pairs, edges);
+//            dist[1][u] = dijkstra(PR(u, 0), pairs, edges);
+//            dist[2][u] = dijkstra(PR(N-1, u), pairs, edges);
+//            dist[3][u] = dijkstra(PR(u, N-1), pairs, edges);
+//            System.out.println(u);
         }
 
         return dist;
