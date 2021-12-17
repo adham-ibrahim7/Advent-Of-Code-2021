@@ -17,3 +17,4 @@ Solutions to the AOC 2021 problems
 14. *** implicitly describing a string
 15. dp/dijkstra graphs lmao
 16. recursion
+17. math but brute force possible
