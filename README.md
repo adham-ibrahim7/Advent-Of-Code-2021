@@ -18,3 +18,4 @@ Solutions to the AOC 2021 problems
 15. dp/dijkstra graphs lmao
 16. recursion
 17. math but brute force possible
+18. incorrect solution lmao
